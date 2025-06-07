@@ -5,7 +5,7 @@ export const processVTpassPurchase = async (data: any) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data), // Not {data} — just data
+        body: JSON.stringify(data), //Not {data} — just data
       });
   
       return await response.json();
