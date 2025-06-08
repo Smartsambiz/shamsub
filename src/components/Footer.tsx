@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Smartphone className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold">PayHub</span>
+              <span className="text-2xl font-bold">shamsub</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md">
               Nigeria's trusted platform for instant data, airtime, utility bills, and TV subscription payments. 
