@@ -23,7 +23,7 @@ const Services = () => {
       const serviceIDs = SERVICE_IDS[category];
       serviceIDs.forEach((serviceID) => {
         setLoading((prev) => ({ ...prev, [serviceID]: true }));
-        fetch(`https:shamsubbackend-production.up.railway.app/api/variations?serviceID=${encodeURIComponent(serviceID)}`)
+        fetch(`https://api.shamsub.com.ng/api/variations?serviceID=${encodeURIComponent(serviceID)}`)
         .then(async (res) => {
           const contentType = res.headers.get("content-type");
           if (!res.ok) {
