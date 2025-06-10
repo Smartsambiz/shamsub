@@ -26,10 +26,21 @@ const Purchase = () => {
     billType: searchParams.get('type') || ''
   });
 
+
+  
+
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // Add validation
+if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
+  navigate('/error', { state: { message: 'Invalid service category' } });
+  return null;
+}
+
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -204,10 +215,10 @@ const Purchase = () => {
                   required
                 >
                   <option value="">Select Network</option>
-                  <option value="MTN">MTN</option>
-                  <option value="Airtel">Airtel</option>
-                  <option value="Glo">Glo</option>
-                  <option value="9Mobile">9Mobile</option>
+                  <option value="mtn">MTN</option>
+                  <option value="airtel">Airtel</option>
+                  <option value="glo">Glo</option>
+                  <option value="9mobile">9Mobile</option>
                 </select>
               </div>
             )}

@@ -1,6 +1,6 @@
 export const processVTpassPurchase = async (data: any) => {
     try {
-      const response = await fetch("https://smartsambiz-1.onrender.com", {
+      const response = await fetch("shamsubbackend-production.up.railway.app/api/variations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
