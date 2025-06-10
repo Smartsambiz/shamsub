@@ -1,6 +1,6 @@
 export const processVTpassPurchase = async (data: any) => {
     try {
-      const response = await fetch("https://shamsub.com.ng/backend/api/vtpass", {
+      const response = await fetch("https://smartsambiz-1.onrender.com", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

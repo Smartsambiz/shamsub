@@ -79,55 +79,61 @@ const Purchase = () => {
       }
 
       // Actual VTpass API call
-    const vtpassResponse = await processVTpassPurchase({
-      ...formData
-     // email: user?.email || '', // optional: for receipts or logging
-    });
+      const vtpassResponse = await processVTpassPurchase({
+        request_id: formData.request_id,      // string, unique
+        serviceID: formData.service,          // string, e.g., "mtn"
+        billersCode: formData.phoneNumber,    // string, e.g., phone, smartcard, meter
+        variation_code: formData.plan,        // string, e.g., "mtn-500"
+        amount: Number(formData.amount),      // number
+        phone: formData.phoneNumber
+      // email: user?.email || '', // optional: for receipts or logging
+      });
 
-    // Check VTpass response
-    if (vtpassResponse?.status === 'success') {
-      setIsSuccess(true);
-    } else {
-      throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
-    }
+      // Check VTpass response
+      if (vtpassResponse?.status === 'success') {
+        setIsSuccess(true);
+      } else {
+        throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
+      }
 
 
-      setIsSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+        setIsSuccess(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
 
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Purchase Successful!
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Your {category} purchase has been completed successfully.
-            </p>
-            <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 mb-6">
-              <p><strong>Phone:</strong> {formData.phoneNumber}</p>
-              <p><strong>Amount:</strong> ₦{formData.amount}</p>
-              {formData.network && <p><strong>Network:</strong> {formData.network}</p>}
-              {formData.plan && <p><strong>Plan:</strong> {formData.plan}</p>}
+    if (isSuccess) {
+      return (
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+              <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                Purchase Successful!
+              </h1>
+              <p className="text-gray-600 mb-6">
+                Your {category} purchase has been completed successfully.
+              </p>
+              <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 mb-6">
+                <p><strong>Phone:</strong> {formData.phoneNumber}</p>
+                <p><strong>Amount:</strong> ₦{formData.amount}</p>
+                {formData.network && <p><strong>Network:</strong> {formData.network}</p>}
+                {formData.plan && <p><strong>Plan:</strong> {formData.plan}</p>}
+              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors"
+              >
+                Return Home
+              </button>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors"
-            >
-              Return Home
-            </button>
           </div>
         </div>
-      </div>
-    );
+      )
+  
   }
 
   const getTitle = () => {
