@@ -1,0 +1,34 @@
+name: Build and Deploy to TrueHost
+on:
+  push:
+    branches: [main]  # Trigger on pushes to main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout code
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Install Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20  # Match your local version
+
+      # 3. Install dependencies and build
+      - name: Install and Build
+        run: 
+          
+          npm run build
+
+      # 4. Deploy to TrueHost via FTP
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ftp.shamsub.com.ng  # TrueHost FTP server
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/         # Folder to deploy
+          server-dir: /public_html/   # TrueHost target folder
