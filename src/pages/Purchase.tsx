@@ -42,6 +42,36 @@ const Purchase = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+
+    const { name, value } = e.target;
+    const getServiceIdForNetwork = (network: string): string => {
+      switch (network.toLowerCase()) {
+        case 'mtn':
+          return 'mtn';
+        case 'airtel':
+          return 'airtel';
+        case 'glo':
+          return 'glo';
+        case '9mobile':
+        case 'etisalat': // some users may still call it this
+          return 'etisalat'; // VTpass uses 'etisalat' as the ID for 9mobile
+        default:
+          return ''; // return empty if unknown
+      }
+    };
+
+
+    let updatedData: any = {
+    ...formData,
+    [name]: value
+  };
+
+  // Automatically assign serviceID for airtime based on selected network
+  if (category === 'airtime' && name === 'network') {
+    updatedData.service = getServiceIdForNetwork(value);
+  }
+
+  setFormData(updatedData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
