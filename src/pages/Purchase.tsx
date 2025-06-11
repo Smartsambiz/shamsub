@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { CreditCard, Wallet, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { processVTpassPurchase } from '../services/vtpassService';
+import PaystackPop from "@paystack/inline-js";
 
 const Purchase = () => {
   const { category } = useParams<{ category: string }>();
@@ -89,33 +90,66 @@ const Purchase = () => {
         if (!user) throw new Error('Please login to use wallet payment');
         const success = await deductFunds(amount, `${category} purchase`);
         if (!success) throw new Error('Insufficient wallet balance');
-      } else {
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            Math.random() > 0.05 ? resolve(true) : reject(new Error('Payment failed. Please try again.'));
-          }, 3000);
-        });
-      }
 
-      const vtpassResponse = await processVTpassPurchase({
+        const vtpassResponse = await processVTpassPurchase({
         request_id: formData.request_id,
         serviceID: formData.service,
         billersCode: formData.phoneNumber,
         variation_code: formData.plan,
         amount: formData.amount,
         phone: formData.phoneNumber
-      });
+        });
 
-      if (vtpassResponse?.status === 'success') {
-        setIsSuccess(true);
-      } else {
-        throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
+        if (vtpassResponse?.status === 'success') {
+          setIsSuccess(true);
+        } else {
+          throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
+        }
+    } else {
+        const paystack = new PaystackPop();
+
+        paystack.newTransaction({
+          key: 'pk_test_d58caa670751f392957d246053c4a3b1340a4dd4', // 🔁 Replace with your test/live key
+          email: user?.email || 'default@email.com',
+          amount: amount * 100, // Paystack expects amount in kobo
+          currency: 'NGN',
+          metadata: {
+            phone: formData.phoneNumber,
+            network: formData.network,
+            category,
+          },
+          onSuccess: async(transaction) => {
+            try{
+              const vtpassResponse = await processVTpassPurchase({
+          request_id: formData.request_id,
+          serviceID: formData.service,
+          billersCode: formData.phoneNumber,
+          variation_code: formData.plan,
+          amount: formData.amount,
+          phone: formData.phoneNumber
+        });
+
+        if (vtpassResponse?.status === 'success') {
+          setIsSuccess(true);
+        } else {
+          throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsProcessing(false);
+    },
+    onCancel: () => {
+          setError('Payment was cancelled');
+          setIsProcessing(false);
+        }
+      })        
     }
+    } catch (err) {
+    setError(err instanceof Error ? err.message : 'An error occurred');
+    setIsProcessing(false);
+   }
   };
 
   if (isSuccess) {
