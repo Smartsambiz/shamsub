@@ -72,7 +72,7 @@ const Purchase = () => {
         serviceID: formData.service,
         billersCode: formData.phoneNumber,
         variation_code: formData.plan,
-        amount: amount,
+        amount: formData.amount,
         phone: formData.phoneNumber
       });
 

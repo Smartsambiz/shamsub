@@ -1,6 +1,6 @@
 export const processVTpassPurchase = async (data: any) => {
     try {
-      const response = await fetch("industrious-contentment-production.up.railway.app/api/vtpass", {
+      const response = await fetch("https://industrious-contentment-production.up.railway.app/api/vtpass", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
