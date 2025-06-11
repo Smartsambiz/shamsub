@@ -96,6 +96,7 @@ const Services = () => {
                               network: serviceID.split('-')[0],
                               plan: plan.variation_code,
                               price: plan.variation_amount,
+                              service : serviceID
                             })}
                             className="w-full bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors inline-flex items-center justify-center"
                           >
