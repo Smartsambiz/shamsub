@@ -4,12 +4,12 @@ import { ArrowRight, Check } from 'lucide-react';
 import { createPurchaseUrl } from '../utils/url';
 
 const SERVICE_IDS = {
-  data: ['mtn-data', 'airtel-data', 'glo-data', 'etisalat-data'], // Service IDs for data plans
-  tv: ['dstv', 'gotv', 'startimes'], // Service IDs for TV subscriptions
-  utilities: ['electricity'], // Service IDs for utilities (e.g., electricity bills)
+  data: ['mtn-data', 'airtel-data', 'glo-data', 'etisalat-data'],
+  tv: ['dstv', 'gotv', 'startimes'],
+  utilities: ['electricity'],
   airtime: {
     info: 'Buy airtime for all Nigerian networks instantly.',
-    serviceID: ['mtn', 'airtel', 'glo', 'etisalat'] // Service IDs for airtime purchase
+    serviceID: ['mtn', 'airtel', 'glo', 'etisalat']
   }
 };
 
@@ -23,28 +23,23 @@ const Services = () => {
       const serviceIDs = SERVICE_IDS[category];
       serviceIDs.forEach((serviceID) => {
         setLoading((prev) => ({ ...prev, [serviceID]: true }));
-        fetch(`https://api.shamsub.com.ng/api/variations?serviceID=${encodeURIComponent(serviceID)}`)
-        .then(async (res) => {
-          const contentType = res.headers.get("content-type");
-          if (!res.ok) {
-            throw new Error(`HTTP error ${res.status}`);
-          }
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Invalid JSON response");
-          }
-          return res.json();
-        })
-        .then((result) => {
-          setServices((prev) => ({ ...prev, [serviceID]: result || [] }));
-        })
-        .catch((error) => {
-          console.error(`Error fetching ${serviceID} variations:`, error);
-          setServices((prev) => ({ ...prev, [serviceID]: [] }));
-        })
-        .finally(() => {
-          setLoading((prev) => ({ ...prev, [serviceID]: false }));
-        });
-
+        fetch(`https://industrious-contentment-production.up.railway.app/api/variations?serviceID=${encodeURIComponent(serviceID)}`)
+          .then(async (res) => {
+            const contentType = res.headers.get("content-type");
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+            if (!contentType?.includes("application/json")) throw new Error("Invalid JSON response");
+            return res.json();
+          })
+          .then((result) => {
+            setServices((prev) => ({ ...prev, [serviceID]: result || [] }));
+          })
+          .catch((error) => {
+            console.error(`Error fetching ${serviceID} variations:`, error);
+            setServices((prev) => ({ ...prev, [serviceID]: [] }));
+          })
+          .finally(() => {
+            setLoading((prev) => ({ ...prev, [serviceID]: false }));
+          });
       });
     }
   }, [category]);
@@ -129,7 +124,6 @@ const Services = () => {
                   <span>All Nigerian networks supported</span>
                 </div>
               </div>
-              
               <Link
                 to="/purchase/airtime"
                 className="w-full bg-green-600 text-white py-4 px-6 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center justify-center text-lg font-semibold"
@@ -140,7 +134,6 @@ const Services = () => {
             </div>
           </div>
         )}
-  
 
         {/* TV Subscriptions */}
         {category === 'tv' &&
@@ -152,7 +145,7 @@ const Services = () => {
                 </h2>
                 {loading[serviceID] ? (
                   <div className="text-center text-gray-500">Loading...</div>
-                ) :(
+                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(services[serviceID] || []).map((plan, idx) => (
                       <div
@@ -167,8 +160,8 @@ const Services = () => {
                             ₦{plan.variation_amount}
                           </p>
                           <Link
-                            to={createPurchaseUrl('data', {
-                              network: serviceID.split('-')[0],
+                            to={createPurchaseUrl('tv', {
+                              network: serviceID,
                               plan: plan.variation_code,
                               price: plan.variation_amount,
                             })}
@@ -211,12 +204,11 @@ const Services = () => {
                             Code: {provider.variation_code}
                           </p>
                           <Link
-                            to={createPurchaseUrl('data', {
-                              service: serviceID.split('-')[0],
+                            to={createPurchaseUrl('utilities', {
+                              service: serviceID,
                               provider: provider.variation_code,
                               price: provider.variation_amount,
                             })}
-                            
                             className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors inline-flex items-center justify-center"
                           >
                             Pay Bill

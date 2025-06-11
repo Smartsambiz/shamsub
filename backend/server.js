@@ -1,26 +1,46 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// ✅ Enable CORS for your frontend
+app.use(cors({
+  origin: 'https://shamsub.com.ng',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
 
+// ✅ Health check
+app.get('/', (req, res) => {
+  res.send('✅ Shamsub backend is live!');
+});
 
+// ✅ Fetch service variations
+app.get('/api/variations', async (req, res) => {
+  const { serviceID } = req.query;
 
+  try {
+    const response = await axios.get(`https://sandbox.vtpass.com/api/service-variations?serviceID=${serviceID}`, {
+      headers: {
+        'api-key': process.env.VTPASS_API_KEY,
+        'secret-key': process.env.VTPASS_SECRET_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    res.json(response.data.content.variations);
+  } catch (error) {
+    console.error('🔴 Error fetching variations:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to fetch variations' });
+  }
+});
 
+// ✅ Process VTpass purchase
 app.post('/api/vtpass', async (req, res) => {
-  const { 
-    request_id,
-    serviceID, 
-    billersCode,
-    variation_code,
-    amount,
-    phone,
-   } = req.body;
+  const { request_id, serviceID, billersCode, variation_code, amount, phone } = req.body;
 
   try {
     const response = await axios.post('https://sandbox.vtpass.com/api/pay', {
@@ -40,34 +60,11 @@ app.post('/api/vtpass', async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).json({ error: "Transaction failed" });
+    console.error('🔴 Transaction error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Transaction failed' });
   }
 });
 
-app.get('/api/variations', async (req, res) => {
-  const { serviceID } = req.query;
-  try {
-    const response = await axios.get(
-      `https://sandbox.vtpass.com/api/service-variations?serviceID=${serviceID}`,
-      {
-        headers: {
-          'api-key': process.env.VTPASS_API_KEY,
-          'secret-key': process.env.VTPASS_SECRET_KEY,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    res.json(response.data.content.variations);
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to fetch variations" });
-  }
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ✅ Start the server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
