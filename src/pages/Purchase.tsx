@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { CreditCard, Wallet, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
-import { processVTpassPurchase } from "../services/vtpassService";
-
+import { processVTpassPurchase } from '../services/vtpassService';
 
 const Purchase = () => {
   const { category } = useParams<{ category: string }>();
@@ -26,21 +25,17 @@ const Purchase = () => {
     billType: searchParams.get('type') || ''
   });
 
-
-  
-
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Add validation
-if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
-  navigate('/error', { state: { message: 'Invalid service category' } });
-  return null;
-}
-
-
+  // Redirect if category is invalid
+  useEffect(() => {
+    if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
+      navigate('/error', { state: { message: 'Invalid service category' } });
+    }
+  }, [category, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -55,96 +50,72 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
     setError('');
 
     try {
-      // Validate form
-      if (!formData.phoneNumber) {
-        throw new Error('Phone number is required');
-      }
+      if (!formData.phoneNumber) throw new Error('Phone number is required');
 
       const amount = parseFloat(formData.amount);
-      if (!amount || amount <= 0) {
-        throw new Error('Valid amount is required');
-      }
+      if (!amount || amount <= 0) throw new Error('Valid amount is required');
 
-      // Process payment
       if (paymentMethod === 'wallet') {
-        if (!user) {
-          throw new Error('Please login to use wallet payment');
-        }
-        
+        if (!user) throw new Error('Please login to use wallet payment');
         const success = await deductFunds(amount, `${category} purchase`);
-        if (!success) {
-          throw new Error('Insufficient wallet balance');
-        }
+        if (!success) throw new Error('Insufficient wallet balance');
       } else {
-        // Simulate Paystack payment
         await new Promise((resolve, reject) => {
           setTimeout(() => {
-            // Simulate 95% success rate
-            if (Math.random() > 0.05) {
-              resolve(true);
-            } else {
-              reject(new Error('Payment failed. Please try again.'));
-            }
+            Math.random() > 0.05 ? resolve(true) : reject(new Error('Payment failed. Please try again.'));
           }, 3000);
         });
       }
 
-      // Actual VTpass API call
       const vtpassResponse = await processVTpassPurchase({
-        request_id: formData.request_id,      // string, unique
-        serviceID: formData.service,          // string, e.g., "mtn"
-        billersCode: formData.phoneNumber,    // string, e.g., phone, smartcard, meter
-        variation_code: formData.plan,        // string, e.g., "mtn-500"
-        amount: Number(formData.amount),      // number
+        request_id: formData.request_id,
+        serviceID: formData.service,
+        billersCode: formData.phoneNumber,
+        variation_code: formData.plan,
+        amount: amount,
         phone: formData.phoneNumber
-      // email: user?.email || '', // optional: for receipts or logging
       });
 
-      // Check VTpass response
       if (vtpassResponse?.status === 'success') {
         setIsSuccess(true);
       } else {
         throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-
-        setIsSuccess(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    if (isSuccess) {
-      return (
-        <div className="min-h-screen bg-gray-50 py-8">
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                Purchase Successful!
-              </h1>
-              <p className="text-gray-600 mb-6">
-                Your {category} purchase has been completed successfully.
-              </p>
-              <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 mb-6">
-                <p><strong>Phone:</strong> {formData.phoneNumber}</p>
-                <p><strong>Amount:</strong> ₦{formData.amount}</p>
-                {formData.network && <p><strong>Network:</strong> {formData.network}</p>}
-                {formData.plan && <p><strong>Plan:</strong> {formData.plan}</p>}
-              </div>
-              <button
-                onClick={() => navigate('/')}
-                className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors"
-              >
-                Return Home
-              </button>
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Purchase Successful!
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Your {category} purchase has been completed successfully.
+            </p>
+            <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4 mb-6">
+              <p><strong>Phone:</strong> {formData.phoneNumber}</p>
+              <p><strong>Amount:</strong> ₦{formData.amount}</p>
+              {formData.network && <p><strong>Network:</strong> {formData.network}</p>}
+              {formData.plan && <p><strong>Plan:</strong> {formData.plan}</p>}
             </div>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors"
+            >
+              Return Home
+            </button>
           </div>
         </div>
-      )
-  
+      </div>
+    );
   }
 
   const getTitle = () => {
@@ -195,12 +166,12 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
                 placeholder="08123456789"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 required
               />
             </div>
 
-            {/* Network Selection for Data/Airtime */}
+            {/* Network (for data/airtime) */}
             {(category === 'data' || category === 'airtime') && (
               <div>
                 <label htmlFor="network" className="block text-sm font-medium text-gray-700 mb-2">
@@ -211,7 +182,7 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                   name="network"
                   value={formData.network}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   required
                 >
                   <option value="">Select Network</option>
@@ -236,12 +207,12 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                 onChange={handleInputChange}
                 min="50"
                 max="50000"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 required
               />
             </div>
 
-            {/* TV Subscription specific fields */}
+            {/* Smart Card (TV) */}
             {category === 'tv' && (
               <div>
                 <label htmlFor="smartCardNumber" className="block text-sm font-medium text-gray-700 mb-2">
@@ -254,13 +225,13 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                   value={formData.smartCardNumber}
                   onChange={handleInputChange}
                   placeholder="Enter your smart card number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   required
                 />
               </div>
             )}
 
-            {/* Utilities specific fields */}
+            {/* Utilities Fields */}
             {category === 'utilities' && (
               <>
                 <div>
@@ -274,7 +245,7 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                     value={formData.meterNumber}
                     onChange={handleInputChange}
                     placeholder="Enter meter or account number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                     required
                   />
                 </div>
@@ -289,56 +260,46 @@ if (!category || !['data', 'airtime', 'tv', 'utilities'].includes(category)) {
                     value={formData.customerName}
                     onChange={handleInputChange}
                     placeholder="Enter customer name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                     required
                   />
                 </div>
               </>
             )}
 
-            {/* Payment Method Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                Payment Method
+            {/* Payment Method */}
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="card"
+                  checked={paymentMethod === 'card'}
+                  onChange={() => setPaymentMethod('card')}
+                  className="mr-2"
+                />
+                <CreditCard className="h-5 w-5 mr-1" /> Pay with Card
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-4 border-2 rounded-lg flex items-center justify-center space-x-2 transition-colors ${
-                    paymentMethod === 'card'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <span>Card Payment</span>
-                </button>
-                
-                {user && (
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('wallet')}
-                    className={`p-4 border-2 rounded-lg flex items-center justify-center space-x-2 transition-colors ${
-                      paymentMethod === 'wallet'
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <Wallet className="h-5 w-5" />
-                    <span>Wallet (₦{balance.toLocaleString()})</span>
-                  </button>
-                )}
-              </div>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="wallet"
+                  checked={paymentMethod === 'wallet'}
+                  onChange={() => setPaymentMethod('wallet')}
+                  className="mr-2"
+                />
+                <Wallet className="h-5 w-5 mr-1" /> Use Wallet (₦{balance})
+              </label>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full bg-blue-700 text-white py-4 px-6 rounded-lg hover:bg-blue-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 transition"
             >
-              {isProcessing ? 'Processing...' : `Pay ₦${formData.amount || '0'}`}
+              {isProcessing ? 'Processing...' : 'Proceed'}
             </button>
           </form>
         </div>
