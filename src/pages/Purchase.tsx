@@ -180,7 +180,7 @@ const Purchase = () => {
                 <select
                   id="network"
                   name="network"
-                  value={formData.network}
+                  value={formData.service}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   required
