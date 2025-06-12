@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { CreditCard, Wallet, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { processVTpassPurchase } from '../services/vtpassService';
-import PaystackPop from "@paystack/inline-js";
+
 
 const Purchase = () => {
   const { category } = useParams<{ category: string }>();
@@ -12,6 +12,7 @@ const Purchase = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { balance, deductFunds } = useWallet();
+  
 
   const [formData, setFormData] = useState({
     request_id: `txn_${Date.now()}`,
@@ -106,47 +107,50 @@ const Purchase = () => {
           throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
         }
     } else {
-        const paystack = new PaystackPop();
+        declare const PaystackPop: any;
+        const payWithPaystack = () => {
 
-        paystack.newTransaction({
-          key: 'pk_test_d58caa670751f392957d246053c4a3b1340a4dd4', // 🔁 Replace with your test/live key
-          email: user?.email || 'default@email.com',
-          amount: amount * 100, // Paystack expects amount in kobo
-          currency: 'NGN',
-          metadata: {
-            phone: formData.phoneNumber,
-            network: formData.network,
-            category,
-          },
-          onSuccess: async(transaction) => {
-            try{
-              const vtpassResponse = await processVTpassPurchase({
-          request_id: formData.request_id,
-          serviceID: formData.service,
-          billersCode: formData.phoneNumber,
-          variation_code: formData.plan,
-          amount: formData.amount,
-          phone: formData.phoneNumber
-        });
+          const handler = PaystackPop.setup({
+            key: 'pk_test_d58caa670751f392957d246053c4a3b1340a4dd4', // 🔁 Replace with your test/live key
+            email: user?.email || 'default@email.com',
+            amount: amount * 100, // Paystack expects amount in kobo
+            currency: 'NGN',
+            metadata: {
+              phone: formData.phoneNumber,
+              network: formData.network,
+              category,
+            },
+            onSuccess: async(transaction) => {
+              try{
+                const vtpassResponse = await processVTpassPurchase({
+            request_id: formData.request_id,
+            serviceID: formData.service,
+            billersCode: formData.phoneNumber,
+            variation_code: formData.plan,
+            amount: formData.amount,
+            phone: formData.phoneNumber
+          });
 
-        if (vtpassResponse?.status === 'success') {
-          setIsSuccess(true);
-        } else {
-          throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    onCancel: () => {
-          setError('Payment was cancelled');
+          if (vtpassResponse?.status === 'success') {
+            setIsSuccess(true);
+          } else {
+            throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
           setIsProcessing(false);
         }
-      })        
+      },
+      onCancel: () => {
+            setError('Payment was cancelled');
+            setIsProcessing(false);
+          }
+        }) 
+        handler.openIframe();    
+    }   
     }
-<<<<<<< HEAD
+
 
     console.log('Sending VTpass payload:', {
   request_id: formData.request_id,
@@ -157,12 +161,12 @@ const Purchase = () => {
   phone: formData.phoneNumber
 });
 
-=======
+
     } catch (err) {
     setError(err instanceof Error ? err.message : 'An error occurred');
     setIsProcessing(false);
    }
->>>>>>> c0e2cf73d9df2a29f3bf83860af0abbd2a360890
+
   };
 
   if (isSuccess) {
