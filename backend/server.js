@@ -65,6 +65,42 @@ app.post('/api/vtpass', async (req, res) => {
   }
 });
 
+//utilities meter number verification
+app.post('/api/verify-meter', async (req, res) => {
+  const { serviceID, meter_number } = req.body;
+
+  const request_id = `verify-${Date.now()}`; // You can customize this
+
+  try {
+    const response = await axios.post('https://sandbox.vtpass.com/api/merchant-verify', {
+      request_id,
+      serviceID,
+      billersCode: meter_number
+    }, {
+      headers: {
+        'api-key': process.env.VTPASS_API_KEY,
+        'secret-key': process.env.VTPASS_SECRET_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const { content } = response.data;
+
+    // Return the core data to frontend
+    res.json({
+      Customer_Name: content?.Customer_Name || '',
+      Meter_Number: content?.Meter_Number || meter_number,
+      Address: content?.Address || '',
+      Raw: content // optional: include full data for debugging
+    });
+
+  } catch (error) {
+    console.error('🔴 Meter verification error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Meter verification failed' });
+  }
+});
+
+
 // ✅ Start the server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

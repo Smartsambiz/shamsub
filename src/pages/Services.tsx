@@ -17,9 +17,17 @@ const Services = () => {
   const { category } = useParams<{ category: string }>();
   const [services, setServices] = useState<{ [key: string]: any[] }>({});
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
+  const [utilityServices, setUtilityServices] = useState<string[]>([]);
+
+  const [selectedDisco, setSelectedDisco] = useState('');
+  const [meterNumber, setMeterNumber] = useState('');
+  const [customerInfo, setCustomerInfo] = useState<any>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
+
 
   useEffect(() => {
-    if (category === 'data' || category === 'tv' || category === 'utilities') {
+    if (category === 'data' || category === 'tv') {
       const serviceIDs = SERVICE_IDS[category];
       serviceIDs.forEach((serviceID) => {
         setLoading((prev) => ({ ...prev, [serviceID]: true }));
@@ -180,48 +188,71 @@ const Services = () => {
           ))}
 
         {/* Utility Bills */}
-        {category === 'utilities' &&
-          SERVICE_IDS.utilities.map((serviceID) => (
-            <div key={serviceID} className="space-y-8">
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                  {serviceID.toUpperCase()} Providers
-                </h2>
-                {loading[serviceID] ? (
-                  <div className="text-center text-gray-500">Loading...</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {(services[serviceID] || []).map((provider, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-yellow-500 transition-colors"
-                      >
-                        <div className="text-center">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {provider.name}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Code: {provider.variation_code}
-                          </p>
-                          <Link
-                            to={createPurchaseUrl('utilities', {
-                              service: serviceID,
-                              provider: provider.variation_code,
-                              price: provider.variation_amount,
-                            })}
-                            className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors inline-flex items-center justify-center"
-                          >
-                            Pay Bill
-                            <ArrowRight className="h-4 w-4 ml-2" />
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+        {category === 'utilities' && (
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Verify Meter Number</h2>
+            <div className="space-y-4">
+              <select
+                value={selectedDisco}
+                onChange={(e) => setSelectedDisco(e.target.value)}
+                className="w-full p-3 border rounded-md"
+              >
+                <option value="">Select DISCO</option>
+                {utilityServices.map((serviceID) => (
+                  <option key={serviceID} value={serviceID}>
+                    {serviceID.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="text"
+                placeholder="Enter Meter Number"
+                value={meterNumber}
+                onChange={(e) => setMeterNumber(e.target.value)}
+                className="w-full p-3 border rounded-md"
+              />
+
+              <button
+                onClick={async () => {
+                  setVerifying(true);
+                  setVerificationError('');
+                  setCustomerInfo(null);
+
+                  try {
+                    const res = await fetch('https://industrious-contentment-production.up.railway.app/api/verify-meter', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ serviceID: selectedDisco, meter_number: meterNumber }),
+                    });
+                    if (!res.ok) throw new Error('Failed to verify meter');
+                    const data = await res.json();
+                    setCustomerInfo(data);
+                  } catch (err: any) {
+                    setVerificationError('Could not verify meter. Please check and try again.');
+                  } finally {
+                    setVerifying(false);
+                  }
+                }}
+                className="bg-yellow-600 text-white py-2 px-4 rounded-md w-full hover:bg-yellow-700"
+                disabled={!selectedDisco || !meterNumber || verifying}
+              >
+                {verifying ? 'Verifying...' : 'Verify Meter'}
+              </button>
+
+              {verificationError && <p className="text-red-500 text-center">{verificationError}</p>}
+              {customerInfo && (
+                <div className="bg-green-50 p-4 rounded-md mt-4 text-center">
+                  <p className="text-green-700 font-semibold">Verified Successfully!</p>
+                  <p className="text-gray-700">Name: {customerInfo?.Customer_Name}</p>
+                  <p className="text-gray-700">Meter No: {customerInfo?.Meter_Number}</p>
+                  <p className="text-gray-700">Address: {customerInfo?.Address}</p>
+                </div>
+              )}
             </div>
-          ))}
+          </div>
+        )}
+
       </div>
     </div>
   );

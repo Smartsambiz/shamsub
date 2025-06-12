@@ -86,6 +86,16 @@ const Purchase = () => {
     } finally {
       setIsProcessing(false);
     }
+
+    console.log('Sending VTpass payload:', {
+  request_id: formData.request_id,
+  serviceID: formData.service,
+  billersCode: formData.phoneNumber,
+  variation_code: formData.plan,
+  amount: formData.amount,
+  phone: formData.phoneNumber
+});
+
   };
 
   if (isSuccess) {
