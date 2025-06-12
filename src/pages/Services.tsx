@@ -50,6 +50,7 @@ const Services = () => {
           });
       });
     }
+
   }, [category]);
 
   return (
