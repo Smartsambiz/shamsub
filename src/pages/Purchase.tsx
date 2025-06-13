@@ -107,8 +107,9 @@ const Purchase = () => {
           throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
         }
     } else {
-        declare const PaystackPop: any;
-        const payWithPaystack = () => {
+        // @ts-ignore
+        const PaystackPop = (window as any).PaystackPop;
+        
 
           const handler = PaystackPop.setup({
             key: 'pk_test_d58caa670751f392957d246053c4a3b1340a4dd4', // 🔁 Replace with your test/live key
@@ -147,12 +148,11 @@ const Purchase = () => {
             setIsProcessing(false);
           }
         }) 
-        handler.openIframe();    
-    }   
-    }
+    handler.openIframe();    
+    
+}
 
-
-    console.log('Sending VTpass payload:', {
+console.log('Sending VTpass payload:', {
   request_id: formData.request_id,
   serviceID: formData.service,
   billersCode: formData.phoneNumber,

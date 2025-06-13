@@ -58,10 +58,8 @@ async function createReservedAccount(userId, name, email) {
 }
 
 module.exports = { createReservedAccount };
-C. Webhook for Wallet Funding
-js
-Copy
-Edit
+
+
 app.post("/monnify-webhook", async (req, res) => {
   const signature = req.headers["monnify-signature"];
   const body = JSON.stringify(req.body);
@@ -84,39 +82,6 @@ app.post("/monnify-webhook", async (req, res) => {
   res.send("success");
 });
 
-
-// monnifyService.js
-async function getMonnifyToken() {
-  const credentials = Buffer.from(`${process.env.MONNIFY_API_KEY}:${process.env.MONNIFY_SECRET_KEY}`).toString("base64");
-  const response = await axios.post(`${MONNIFY_BASE_URL}/auth/login`, {}, {
-    headers: {
-      Authorization: `Basic ${credentials}`,
-    },
-  });
-  return response.data.responseBody.accessToken;
-}
-
-async function createReservedAccount(userId, name, email) {
-  const token = await getMonnifyToken();
-  const data = {
-    accountReference: `user-${userId}`,
-    accountName: name,
-    currencyCode: "NGN",
-    contractCode: process.env.MONNIFY_CONTRACT_CODE,
-    customerEmail: email,
-    customerName: name,
-  };
-
-  const response = await axios.post(`${MONNIFY_BASE_URL}/bank-transfer/reserved-accounts`, data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return response.data.responseBody;
-}
-
-module.exports = { createReservedAccount };
 
 
 
@@ -173,13 +138,16 @@ app.post('/api/verify-meter', async (req, res) => {
 
   const request_id = `verify-${Date.now()}`; // You can customize this
 
-  const { request_id, serviceID, billersCode, variation_code, amount, phone, type, } = req.body;
+  const { billersCode, variation_code, amount, phone, type, } = req.body;
 
   try {
     const response = await axios.post('https://sandbox.vtpass.com/api/merchant-verify', {
       request_id,
       serviceID,
-
+      variation_code,
+      amount,
+      phone,
+      type,
       billersCode: meter_number
 
     }, {
