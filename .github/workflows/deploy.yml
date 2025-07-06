@@ -20,3 +20,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/             # Deploy this folder
           server-dir: /public_html/       # TrueHost target
+          timeout: 12000
