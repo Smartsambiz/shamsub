@@ -25,5 +25,4 @@ jobs:
           port: 21
           timeout: 120000                     # ✅ 120 seconds (2 mins)
 
-          # Optional: show detailed logs for debugging
-          verbose: true
+          
