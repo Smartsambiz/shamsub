@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useFrontendAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { CreditCard, Wallet, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { processVTpassPurchase } from '../services/vtpassService';
@@ -10,7 +10,7 @@ const Purchase = () => {
   const { category } = useParams<{ category: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useFrontendAuth();
   const { balance, deductFunds } = useWallet();
   
 
@@ -63,17 +63,18 @@ const Purchase = () => {
     };
 
 
-    let updatedData: any = {
-    ...formData,
-    [name]: value
-  };
+    type UpdatedData = typeof formData;
+    const updatedData: UpdatedData = {
+      ...formData,
+      [name]: value
+    };
 
-  // Automatically assign serviceID for airtime based on selected network
-  if (category === 'airtime' && name === 'network') {
-    updatedData.service = getServiceIdForNetwork(value);
-  }
+    // Automatically assign serviceID for airtime based on selected network
+    if (category === 'airtime' && name === 'network') {
+      updatedData.service = getServiceIdForNetwork(value);
+    }
 
-  setFormData(updatedData);
+    setFormData(updatedData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,8 +108,18 @@ const Purchase = () => {
           throw new Error(vtpassResponse?.message || 'VTpass transaction failed');
         }
     } else {
-        // @ts-ignore
-        const PaystackPop = (window as any).PaystackPop;
+        interface PaystackConfig {
+          key: string;
+          email: string;
+          amount: number;
+          currency: string;
+          metadata: Record<string, unknown>;
+          onSuccess: () => void;
+          onCancel: () => void;
+        }
+
+        // @ts-expect-error: PaystackPop is injected globally by Paystack script and has no type
+        const PaystackPop = (window as unknown as { PaystackPop: { setup: (config: PaystackConfig) => { openIframe: () => void } } }).PaystackPop;
         
 
           const handler = PaystackPop.setup({
@@ -121,7 +132,7 @@ const Purchase = () => {
               network: formData.network,
               category,
             },
-            onSuccess: async(transaction) => {
+            onSuccess: async () => {
               try{
                 const vtpassResponse = await processVTpassPurchase({
             request_id: formData.request_id,

@@ -1,98 +1,89 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../integrations/supabase/client';
+import { userService, RegisterUserData, LoginUserData } from '../services/userService';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  phone: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: RegisterData) => Promise<boolean>;
-  logout: () => void;
-  isLoading: boolean;
-}
-
-interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const useFrontendAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<{ id: string; email: string } | null>(null);
 
   useEffect(() => {
-    // Check for stored user data on mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: string, session: Session | null) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Fetch user profile if logged in
+        if (session?.user) {
+          const profileResult = await userService.getUserProfile(session.user.id);
+          if (profileResult.success) {
+            setUserProfile(profileResult.profile);
+          }
+        } else {
+          setUserProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Simulate API call - replace with actual authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData = {
-        id: '1',
-        email,
-        name: 'John Doe',
-        phone: '+2348123456789'
-      };
-      
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      return true;
-    } catch (error) {
-      return false;
-    }
+  const register = async (userData: RegisterUserData) => {
+    setLoading(true);
+    const result = await userService.registerUser(userData);
+    setLoading(false);
+    return result;
   };
 
-  const register = async (userData: RegisterData): Promise<boolean> => {
-    try {
-      // Simulate API call - replace with actual registration
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser = {
-        id: Date.now().toString(),
-        email: userData.email,
-        name: userData.name,
-        phone: userData.phone
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      return true;
-    } catch (error) {
-      return false;
-    }
+  const login = async (loginData: LoginUserData) => {
+    setLoading(true);
+    const result = await userService.loginUser(loginData);
+    setLoading(false);
+    return result;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    setLoading(true);
+    const result = await userService.logoutUser();
+    setLoading(false);
+    return result;
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return {
+    user,
+    session,
+    userProfile,
+    loading,
+    register,
+    login,
+    logout,
+    isAuthenticated: !!user
+  };
+};
+
+const AuthContext = createContext<ReturnType<typeof useFrontendAuth> | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const auth = useFrontendAuth();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

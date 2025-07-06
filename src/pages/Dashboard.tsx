@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFrontendAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { Navigate, Link } from 'react-router-dom';
 import { 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user } = useFrontendAuth();
   const { balance, transactions, addFunds } = useWallet();
   const [fundAmount, setFundAmount] = useState('');
   const [isAddingFunds, setIsAddingFunds] = useState(false);
@@ -43,7 +43,7 @@ const Dashboard = () => {
       } else {
         alert('Failed to fund wallet. Please try again.');
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred. Please try again.');
     } finally {
       setIsAddingFunds(false);
@@ -58,7 +58,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user.name}!
+            Welcome back, {user.email}!
           </h1>
           <p className="text-gray-600">
             Manage your wallet and track your transactions

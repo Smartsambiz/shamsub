@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useFrontendAuth } from '../contexts/AuthContext';
 import { Menu, X, Wallet, User, LogOut, Smartphone } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout } = useFrontendAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -48,7 +48,7 @@ const Navbar = () => {
                   className="flex items-center space-x-2 text-gray-700 hover:text-blue-700 font-medium transition-colors"
                 >
                   <User className="h-5 w-5" />
-                  <span>{user.name}</span>
+                  <span>{user.email}</span>
                 </button>
                 
                 {showUserMenu && (
